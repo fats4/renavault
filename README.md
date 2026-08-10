@@ -80,16 +80,19 @@ Klik **Publish**.
 
 ### 6. Struktur data di Firestore
 
-Semua data disimpan di satu document:
+Data dipisah per modul — satu document per bagian:
 
 ```
-finance/
-  └── main/    ← seluruh FinanceState (transactions, budgets, drops, dll.)
+modules/
+  ├── fpa           ← budgets
+  ├── treasury      ← cashBalance, minCashThreshold, transactions
+  ├── accounting    ← taxRate
+  ├── pricing       ← drops / SKU
+  ├── fundraising   ← investors / cap table
+  └── risk          ← risks, approvals
 ```
 
-Saat pertama kali connect, app otomatis:
-- Migrate data dari localStorage (jika ada), atau
-- Seed data sample brand fashion
+Saat pertama kali connect setelah update, app otomatis **migrate** data lama dari `finance/main` ke struktur baru di atas.
 
 ## Fallback tanpa Firebase
 

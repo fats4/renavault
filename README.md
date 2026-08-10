@@ -115,6 +115,55 @@ cp .env.example .env.local
 
 **GitHub Actions (opsional):** pakai **Repository Secrets** (`Settings → Secrets and variables → Actions`).
 
+## Deploy ke Vercel
+
+Repo sudah include `vercel.json` untuk Vite + React Router (SPA routing).
+
+### Opsi A — Import dari GitHub (disarankan)
+
+1. Buka [vercel.com/new](https://vercel.com/new)
+2. **Import** repo `fats4/renavault`
+3. Vercel auto-detect **Vite** — biarkan default:
+   - Build Command: `npm run build`
+   - Output Directory: `dist`
+4. Klik **Deploy**
+
+### Opsi B — Deploy via CLI
+
+```bash
+npx vercel login
+npx vercel --prod
+```
+
+### Environment Variables (Firebase)
+
+Set di **Vercel → Project → Settings → Environment Variables** (bukan di repo):
+
+| Name | Value |
+|------|-------|
+| `VITE_FIREBASE_API_KEY` | dari Firebase Console |
+| `VITE_FIREBASE_AUTH_DOMAIN` | `xxx.firebaseapp.com` |
+| `VITE_FIREBASE_PROJECT_ID` | project id |
+| `VITE_FIREBASE_STORAGE_BUCKET` | `xxx.appspot.com` |
+| `VITE_FIREBASE_MESSAGING_SENDER_ID` | sender id |
+| `VITE_FIREBASE_APP_ID` | app id |
+
+Centang **Production**, **Preview**, dan **Development**. Redeploy setelah menambah env.
+
+Tanpa env vars, app tetap jalan pakai **localStorage** (data per browser).
+
+### Firebase — Authorized Domains
+
+Setelah deploy, tambahkan domain Vercel di Firebase Console:
+
+**Authentication → Settings → Authorized domains** (jika pakai Auth nanti)
+
+Untuk Firestore web app, pastikan domain production sudah terdaftar di **Project Settings → Your apps → Web app**.
+
+Contoh domain yang perlu ditambahkan:
+- `renavault.vercel.app`
+- custom domain (jika ada)
+
 ## Build
 
 ```bash

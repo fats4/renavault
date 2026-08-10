@@ -14,6 +14,7 @@ import type {
   DropProduct,
   FinanceState,
   Investor,
+  ProductionItem,
   RiskItem,
   Transaction,
 } from '../types'
@@ -35,6 +36,12 @@ interface FinanceContextValue {
   updateCashBalance: (amount: number) => void
   updateMinCashThreshold: (amount: number) => void
   addTransaction: (tx: Omit<Transaction, 'id'>) => void
+  updateTransaction: (id: string, updates: Partial<Transaction>) => void
+  deleteTransaction: (id: string) => void
+  addProduction: (item: Omit<ProductionItem, 'id'>) => void
+  updateProduction: (id: string, updates: Partial<ProductionItem>) => void
+  deleteProduction: (id: string) => void
+  markProductionPaid: (id: string) => void
   updateBudget: (id: string, updates: Partial<BudgetItem>) => void
   addDrop: (drop: Omit<DropProduct, 'id'>) => void
   updateDrop: (id: string, updates: Partial<DropProduct>) => void
@@ -48,6 +55,11 @@ const FinanceContext = createContext<FinanceContextValue | null>(null)
 
 function uid() {
   return crypto.randomUUID()
+}
+
+function transactionCashEffect(tx: Transaction): number {
+  if (tx.status !== 'completed') return 0
+  return tx.type === 'income' ? tx.amount : -tx.amount
 }
 
 export function FinanceProvider({ children }: { children: ReactNode }) {
@@ -108,15 +120,67 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const addTransaction = useCallback((tx: Omit<Transaction, 'id'>) => {
+    const full = { ...tx, id: uid() }
     setState((s) => ({
       ...s,
-      transactions: [...s.transactions, { ...tx, id: uid() }],
-      cashBalance:
-        tx.status === 'completed'
-          ? tx.type === 'income'
-            ? s.cashBalance + tx.amount
-            : s.cashBalance - tx.amount
-          : s.cashBalance,
+      transactions: [...s.transactions, full],
+      cashBalance: s.cashBalance + transactionCashEffect(full),
+    }))
+  }, [])
+
+  const updateTransaction = useCallback((id: string, updates: Partial<Transaction>) => {
+    setState((s) => {
+      const old = s.transactions.find((t) => t.id === id)
+      if (!old) return s
+      const updated = { ...old, ...updates }
+      const cashDelta = transactionCashEffect(updated) - transactionCashEffect(old)
+      return {
+        ...s,
+        cashBalance: s.cashBalance + cashDelta,
+        transactions: s.transactions.map((t) => (t.id === id ? updated : t)),
+      }
+    })
+  }, [])
+
+  const deleteTransaction = useCallback((id: string) => {
+    setState((s) => {
+      const old = s.transactions.find((t) => t.id === id)
+      if (!old) return s
+      return {
+        ...s,
+        cashBalance: s.cashBalance - transactionCashEffect(old),
+        transactions: s.transactions.filter((t) => t.id !== id),
+      }
+    })
+  }, [])
+
+  const addProduction = useCallback((item: Omit<ProductionItem, 'id'>) => {
+    setState((s) => ({
+      ...s,
+      productions: [...s.productions, { ...item, id: uid() }],
+    }))
+  }, [])
+
+  const updateProduction = useCallback((id: string, updates: Partial<ProductionItem>) => {
+    setState((s) => ({
+      ...s,
+      productions: s.productions.map((p) => (p.id === id ? { ...p, ...updates } : p)),
+    }))
+  }, [])
+
+  const deleteProduction = useCallback((id: string) => {
+    setState((s) => ({
+      ...s,
+      productions: s.productions.filter((p) => p.id !== id),
+    }))
+  }, [])
+
+  const markProductionPaid = useCallback((id: string) => {
+    setState((s) => ({
+      ...s,
+      productions: s.productions.map((p) =>
+        p.id === id ? { ...p, paidAmount: p.totalAmount } : p,
+      ),
     }))
   }, [])
 
@@ -177,6 +241,12 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       updateCashBalance,
       updateMinCashThreshold,
       addTransaction,
+      updateTransaction,
+      deleteTransaction,
+      addProduction,
+      updateProduction,
+      deleteProduction,
+      markProductionPaid,
       updateBudget,
       addDrop,
       updateDrop,
@@ -194,6 +264,12 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       updateCashBalance,
       updateMinCashThreshold,
       addTransaction,
+      updateTransaction,
+      deleteTransaction,
+      addProduction,
+      updateProduction,
+      deleteProduction,
+      markProductionPaid,
       updateBudget,
       addDrop,
       updateDrop,

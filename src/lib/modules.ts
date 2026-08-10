@@ -5,6 +5,7 @@ import type {
   FinanceState,
   Investor,
   RiskItem,
+  ProductionItem,
   Transaction,
 } from '../types'
 import { SEED_DATA } from './seedData'
@@ -28,6 +29,7 @@ export interface TreasuryModule {
   cashBalance: number
   minCashThreshold: number
   transactions: Transaction[]
+  productions: ProductionItem[]
 }
 
 export interface AccountingModule {
@@ -63,6 +65,7 @@ export function splitState(state: FinanceState): ModuleDocMap {
       cashBalance: state.cashBalance,
       minCashThreshold: state.minCashThreshold,
       transactions: state.transactions,
+      productions: state.productions,
     },
     accounting: { taxRate: state.taxRate },
     pricing: { drops: state.drops },
@@ -77,6 +80,7 @@ export function mergeModules(parts: Partial<ModuleDocMap>): FinanceState {
     cashBalance: parts.treasury?.cashBalance ?? SEED_DATA.cashBalance,
     minCashThreshold: parts.treasury?.minCashThreshold ?? SEED_DATA.minCashThreshold,
     transactions: parts.treasury?.transactions ?? SEED_DATA.transactions,
+    productions: parts.treasury?.productions ?? SEED_DATA.productions,
     taxRate: parts.accounting?.taxRate ?? SEED_DATA.taxRate,
     drops: parts.pricing?.drops ?? SEED_DATA.drops,
     investors: parts.fundraising?.investors ?? SEED_DATA.investors,

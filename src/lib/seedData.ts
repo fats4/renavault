@@ -6,6 +6,7 @@ export const SEED_DATA: FinanceState = {
   minCashThreshold: 0,
   taxRate: 22,
   transactions: [],
+  productions: [],
   budgets: [],
   drops: [],
   investors: [],

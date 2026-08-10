@@ -10,6 +10,16 @@ export interface Transaction {
   status: 'pending' | 'completed' | 'scheduled'
 }
 
+export interface ProductionItem {
+  id: string
+  name: string
+  vendor: string
+  totalAmount: number
+  paidAmount: number
+  dueDate: string
+  notes: string
+}
+
 export interface BudgetItem {
   id: string
   category: string
@@ -69,6 +79,7 @@ export interface ApprovalRequest {
 export interface FinanceState {
   cashBalance: number
   transactions: Transaction[]
+  productions: ProductionItem[]
   budgets: BudgetItem[]
   drops: DropProduct[]
   investors: Investor[]

@@ -1,5 +1,6 @@
 import {
   doc,
+  deleteDoc,
   getDoc,
   onSnapshot,
   setDoc,
@@ -44,8 +45,10 @@ async function migrateLegacyDocument(): Promise<FinanceState | null> {
 
   const legacyRef = doc(db, LEGACY_COLLECTION, LEGACY_DOCUMENT)
   const legacySnap = await getDoc(legacyRef)
-
   if (!legacySnap.exists()) return null
+
+  const treasurySnap = await getDoc(moduleRef('treasury'))
+  if (treasurySnap.exists()) return null
 
   const legacyState = legacySnap.data() as FinanceState
   await saveAllModules(legacyState)
@@ -138,6 +141,11 @@ export async function resetFinanceState(): Promise<FinanceState> {
   }
 
   await saveAllModules(SEED_DATA)
+  try {
+    await deleteDoc(doc(db, LEGACY_COLLECTION, LEGACY_DOCUMENT))
+  } catch {
+    /* legacy doc may not exist */
+  }
   localStorage.removeItem('renavault-finance')
   return SEED_DATA
 }

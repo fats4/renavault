@@ -30,7 +30,9 @@ export function PricingPage() {
 
   const allMargins = state.drops.map((d) => ({ ...d, ...getDropMargin(d) }))
   const avgMargin =
-    allMargins.reduce((s, d) => s + d.marginPercent, 0) / (allMargins.length || 1)
+    allMargins.length > 0
+      ? allMargins.reduce((s, d) => s + d.marginPercent, 0) / allMargins.length
+      : 0
 
   const handleAddDrop = (e: React.FormEvent) => {
     e.preventDefault()

@@ -107,7 +107,7 @@ export function Layout() {
           </div>
           <button
             onClick={() => {
-              if (confirm('Reset semua data ke sample?')) void resetData()
+              if (confirm('Reset semua data ke kosong (0)?')) void resetData()
             }}
             className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs text-surface-500 transition-colors hover:bg-surface-800 hover:text-surface-300"
           >

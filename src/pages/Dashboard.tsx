@@ -33,7 +33,9 @@ export function DashboardPage() {
   )
   const activeDrops = state.drops.filter((d) => d.status === 'production' || d.status === 'live')
   const avgMargin =
-    state.drops.reduce((s, d) => s + getDropMargin(d).marginPercent, 0) / state.drops.length
+    state.drops.length > 0
+      ? state.drops.reduce((s, d) => s + getDropMargin(d).marginPercent, 0) / state.drops.length
+      : 0
 
   const cashAlert = state.cashBalance < state.minCashThreshold * 2
 

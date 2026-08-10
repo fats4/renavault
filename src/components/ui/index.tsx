@@ -117,9 +117,18 @@ interface InputProps {
   type?: string
   placeholder?: string
   prefix?: string
+  inputClassName?: string
 }
 
-export function Input({ label, value, onChange, type = 'text', placeholder, prefix }: InputProps) {
+export function Input({
+  label,
+  value,
+  onChange,
+  type = 'text',
+  placeholder,
+  prefix,
+  inputClassName = '',
+}: InputProps) {
   return (
     <label className="block">
       {label && <span className="mb-1.5 block text-xs font-medium text-surface-400">{label}</span>}
@@ -132,7 +141,7 @@ export function Input({ label, value, onChange, type = 'text', placeholder, pref
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className={`w-full rounded-lg border border-surface-600 bg-surface-800 px-3 py-2 text-sm text-white placeholder:text-surface-500 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent ${prefix ? 'pl-8' : ''}`}
+          className={`w-full rounded-lg border border-surface-600 bg-surface-800 px-3 py-2 text-sm text-white placeholder:text-surface-500 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent ${prefix ? 'pl-8' : ''} ${inputClassName}`}
         />
       </div>
     </label>

@@ -61,7 +61,14 @@ VITE_FIREBASE_APP_ID=1:123456789:web:abc123
 
 Restart dev server setelah mengubah `.env.local`.
 
-### 5. Deploy Firestore Rules
+### 5. Aktifkan Authentication
+
+1. **Build → Authentication → Get started**
+2. Enable **Email/Password**
+3. Enable **Google** (opsional, tambahkan support email)
+4. **Settings → Authorized domains** → pastikan `renavault.vercel.app` ada
+
+### 6. Deploy Firestore Rules
 
 Di Firebase Console → **Firestore → Rules**, paste isi `firestore.rules`:
 
@@ -69,8 +76,8 @@ Di Firebase Console → **Firestore → Rules**, paste isi `firestore.rules`:
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /finance/{document=**} {
-      allow read, write: if true;  // DEV only — tambah Auth untuk production
+    match /users/{userId}/modules/{moduleId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
   }
 }
@@ -78,21 +85,21 @@ service cloud.firestore {
 
 Klik **Publish**.
 
-### 6. Struktur data di Firestore
+### 7. Struktur data di Firestore
 
-Data dipisah per modul — satu document per bagian:
+Data per user, dipisah per modul:
 
 ```
-modules/
+users/{userId}/modules/
   ├── fpa           ← budgets
-  ├── treasury      ← cashBalance, minCashThreshold, transactions
+  ├── treasury      ← cashBalance, transactions
   ├── accounting    ← taxRate
-  ├── pricing       ← drops / SKU
-  ├── fundraising   ← investors / cap table
+  ├── pricing       ← drops
+  ├── fundraising   ← investors
   └── risk          ← risks, approvals
 ```
 
-Saat pertama kali connect setelah update, app otomatis **migrate** data lama dari `finance/main` ke struktur baru di atas.
+Setiap akun punya database sendiri — data tidak tercampur antar user.
 
 ## Fallback tanpa Firebase
 

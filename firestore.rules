@@ -2,18 +2,9 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // DEV: izinkan read/write tanpa auth.
-    // PRODUCTION: ganti dengan Firebase Auth, contoh:
-    // allow read, write: if request.auth != null;
-
-    // Database per modul (FP&A, Treasury, Accounting, dll.)
-    match /modules/{moduleId} {
-      allow read, write: if true;
-    }
-
-    // Legacy — untuk migrasi dari struktur lama
-    match /finance/{document=**} {
-      allow read, write: if true;
+    // Data per user — hanya owner yang bisa akses
+    match /users/{userId}/modules/{moduleId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
   }
 }

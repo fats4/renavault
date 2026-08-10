@@ -13,7 +13,9 @@ import {
   HardDrive,
   Loader2,
   AlertCircle,
+  LogOut,
 } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
 import { useFinance } from '../context/FinanceContext'
 import { formatCurrency } from '../lib/format'
 
@@ -28,6 +30,7 @@ const navItems = [
 ]
 
 export function Layout() {
+  const { user, logout, authRequired } = useAuth()
   const { state, loading, saving, error, storageBackend, resetData } = useFinance()
 
   if (loading) {
@@ -114,6 +117,19 @@ export function Layout() {
             <RotateCcw className="h-3 w-3" />
             Reset Data
           </button>
+
+          {authRequired && user && (
+            <div className="mt-3 border-t border-surface-700 pt-3">
+              <p className="truncate text-[10px] text-surface-500">{user.email}</p>
+              <button
+                onClick={() => void logout()}
+                className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs text-surface-400 transition-colors hover:bg-surface-800 hover:text-white"
+              >
+                <LogOut className="h-3 w-3" />
+                Keluar
+              </button>
+            </div>
+          )}
         </div>
       </aside>
 

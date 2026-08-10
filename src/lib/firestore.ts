@@ -1,6 +1,5 @@
 import {
   doc,
-  deleteDoc,
   getDoc,
   onSnapshot,
   setDoc,
@@ -19,9 +18,7 @@ import {
 import { SEED_DATA } from './seedData'
 import { loadStateLocal, resetStateLocal, saveStateLocal } from './storage'
 
-const MODULE_COLLECTION = 'modules'
-const LEGACY_COLLECTION = 'finance'
-const LEGACY_DOCUMENT = 'main'
+const MODULES_SUBCOLLECTION = 'modules'
 
 export type StorageBackend = 'firebase' | 'local'
 
@@ -29,48 +26,34 @@ export function getStorageBackend(): StorageBackend {
   return isFirebaseConfigured() ? 'firebase' : 'local'
 }
 
-function moduleRef(id: ModuleId): DocumentReference {
+function moduleRef(userId: string, id: ModuleId): DocumentReference {
   if (!db) throw new Error('Firestore belum diinisialisasi')
-  return doc(db, MODULE_COLLECTION, id)
+  return doc(db, 'users', userId, MODULES_SUBCOLLECTION, id)
 }
 
-async function saveAllModules(state: FinanceState): Promise<void> {
+async function saveAllModules(userId: string, state: FinanceState): Promise<void> {
   if (!db) throw new Error('Firestore belum diinisialisasi')
   const parts = splitState(state)
-  await Promise.all(MODULE_IDS.map((id) => setDoc(moduleRef(id), parts[id])))
+  await Promise.all(MODULE_IDS.map((id) => setDoc(moduleRef(userId, id), parts[id])))
 }
 
-async function migrateLegacyDocument(): Promise<FinanceState | null> {
-  if (!db) return null
-
-  const legacyRef = doc(db, LEGACY_COLLECTION, LEGACY_DOCUMENT)
-  const legacySnap = await getDoc(legacyRef)
-  if (!legacySnap.exists()) return null
-
-  const treasurySnap = await getDoc(moduleRef('treasury'))
-  if (treasurySnap.exists()) return null
-
-  const legacyState = legacySnap.data() as FinanceState
-  await saveAllModules(legacyState)
-  return legacyState
-}
-
-async function ensureModulesSeeded(fallback: FinanceState): Promise<void> {
+async function ensureModulesSeeded(userId: string, fallback: FinanceState): Promise<void> {
   if (!db) return
 
   const parts = splitState(fallback)
   await Promise.all(
     MODULE_IDS.map(async (id) => {
-      const snap = await getDoc(moduleRef(id))
+      const snap = await getDoc(moduleRef(userId, id))
       if (!snap.exists()) {
-        await setDoc(moduleRef(id), parts[id])
+        await setDoc(moduleRef(userId, id), parts[id])
       }
     }),
   )
 }
 
-/** Subscribe to all module documents — real-time sync per bagian */
+/** Subscribe to all module documents for a user — real-time sync per bagian */
 export function subscribeFinanceState(
+  userId: string,
   onData: (state: FinanceState) => void,
   onError: (error: Error) => void,
 ): Unsubscribe {
@@ -84,9 +67,7 @@ export function subscribeFinanceState(
 
   void (async () => {
     try {
-      const migrated = await migrateLegacyDocument()
-      const fallback = migrated ?? loadStateLocal()
-      await ensureModulesSeeded(fallback)
+      await ensureModulesSeeded(userId, SEED_DATA)
 
       if (cancelled) return
 
@@ -101,7 +82,7 @@ export function subscribeFinanceState(
       for (const id of MODULE_IDS) {
         unsubscribers.push(
           onSnapshot(
-            moduleRef(id),
+            moduleRef(userId, id),
             (snapshot) => {
               if (snapshot.exists()) {
                 ;(parts as Record<ModuleId, ModuleDocMap[ModuleId]>)[id] =
@@ -125,36 +106,32 @@ export function subscribeFinanceState(
 }
 
 /** Persist each module to its own Firestore document */
-export async function saveFinanceState(state: FinanceState): Promise<void> {
+export async function saveFinanceState(userId: string, state: FinanceState): Promise<void> {
   if (!isFirebaseConfigured() || !db) {
     saveStateLocal(state)
     return
   }
 
-  await saveAllModules(state)
+  await saveAllModules(userId, state)
 }
 
-/** Reset all modules to seed data */
-export async function resetFinanceState(): Promise<FinanceState> {
+/** Reset all modules to empty seed data */
+export async function resetFinanceState(userId: string): Promise<FinanceState> {
   if (!isFirebaseConfigured() || !db) {
     return resetStateLocal()
   }
 
-  await saveAllModules(SEED_DATA)
-  try {
-    await deleteDoc(doc(db, LEGACY_COLLECTION, LEGACY_DOCUMENT))
-  } catch {
-    /* legacy doc may not exist */
-  }
+  await saveAllModules(userId, SEED_DATA)
   localStorage.removeItem('renavault-finance')
   return SEED_DATA
 }
 
 /** Save a single module document */
 export async function saveModule<K extends ModuleId>(
+  userId: string,
   id: K,
   data: ModuleDocMap[K],
 ): Promise<void> {
   if (!isFirebaseConfigured() || !db) return
-  await setDoc(moduleRef(id), data)
+  await setDoc(moduleRef(userId, id), data)
 }

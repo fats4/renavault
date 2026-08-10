@@ -50,7 +50,13 @@ function uid() {
   return crypto.randomUUID()
 }
 
-export function FinanceProvider({ children }: { children: ReactNode }) {
+export function FinanceProvider({
+  children,
+  userId,
+}: {
+  children: ReactNode
+  userId?: string
+}) {
   const [state, setState] = useState<FinanceState>(SEED_DATA)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -59,7 +65,11 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   const readyToSave = useRef(false)
 
   useEffect(() => {
+    readyToSave.current = false
+    setLoading(true)
+
     const unsubscribe = subscribeFinanceState(
+      userId ?? 'local',
       (data) => {
         setState((prev) => {
           if (JSON.stringify(prev) === JSON.stringify(data)) return prev
@@ -76,15 +86,16 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     )
 
     return unsubscribe
-  }, [])
+  }, [userId])
 
   useEffect(() => {
     if (!readyToSave.current || loading) return
+    if (storageBackend === 'firebase' && !userId) return
 
     setSaving(true)
     const timer = setTimeout(async () => {
       try {
-        await saveFinanceState(state)
+        await saveFinanceState(userId ?? 'local', state)
         setError(null)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Gagal menyimpan data')
@@ -94,7 +105,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     }, 400)
 
     return () => clearTimeout(timer)
-  }, [state, loading])
+  }, [state, loading, userId])
 
   const updateCashBalance = useCallback((amount: number) => {
     setState((s) => ({ ...s, cashBalance: amount }))
@@ -160,9 +171,9 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const resetData = useCallback(async () => {
-    const data = await resetFinanceState()
+    const data = await resetFinanceState(userId ?? 'local')
     setState(data)
-  }, [])
+  }, [userId])
 
   const value = useMemo(
     () => ({

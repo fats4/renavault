@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useFinance } from '../context/FinanceContext'
-import { Card, Button, Input, StatCard, Badge } from '../components/ui'
+import { Card, Button, Input, RupiahInput, StatCard, Badge } from '../components/ui'
 import { formatCurrency, formatPercent, parseInputNumber } from '../lib/format'
 import { getDropMargin } from '../lib/calculations'
 
@@ -91,8 +91,8 @@ export function PricingPage() {
       <Card title="Margin Calculator" subtitle="Hitung margin & break-even sebelum produksi">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <div className="grid grid-cols-3 gap-4">
-            <Input label="COGS / unit" value={calcCogs} onChange={setCalcCogs} prefix="Rp" />
-            <Input label="Harga Jual" value={calcPrice} onChange={setCalcPrice} prefix="Rp" />
+            <RupiahInput label="COGS / unit" value={calcCogs} onChange={setCalcCogs} />
+            <RupiahInput label="Harga Jual" value={calcPrice} onChange={setCalcPrice} />
             <Input label="Units" value={calcUnits} onChange={setCalcUnits} type="number" />
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -134,8 +134,8 @@ export function PricingPage() {
           <form onSubmit={handleAddDrop} className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <Input label="Nama Produk" value={form.name} onChange={(v) => setForm({ ...form, name: v })} />
             <Input label="SKU" value={form.sku} onChange={(v) => setForm({ ...form, sku: v })} />
-            <Input label="COGS" value={form.cogs} onChange={(v) => setForm({ ...form, cogs: v })} prefix="Rp" />
-            <Input label="Harga Jual" value={form.sellPrice} onChange={(v) => setForm({ ...form, sellPrice: v })} prefix="Rp" />
+            <RupiahInput label="COGS" value={form.cogs} onChange={(v) => setForm({ ...form, cogs: v })} />
+            <RupiahInput label="Harga Jual" value={form.sellPrice} onChange={(v) => setForm({ ...form, sellPrice: v })} />
             <Input label="Units" value={form.units} onChange={(v) => setForm({ ...form, units: v })} type="number" />
             <Input label="Drop Date" value={form.dropDate} onChange={(v) => setForm({ ...form, dropDate: v })} type="date" />
             <div className="flex items-end">

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { ArrowDownLeft, ArrowUpRight, AlertTriangle } from 'lucide-react'
 import { useFinance } from '../context/FinanceContext'
-import { Card, Button, Input, Select, StatCard, Badge } from '../components/ui'
+import { Card, Button, Input, RupiahInput, Select, StatCard, Badge } from '../components/ui'
 import { formatCurrency, formatDate, parseInputNumber } from '../lib/format'
 import { getMonthlyBurn, getRunwayMonths } from '../lib/calculations'
 
@@ -97,11 +97,10 @@ export function TreasuryPage() {
               value={form.description}
               onChange={(v) => setForm({ ...form, description: v })}
             />
-            <Input
+            <RupiahInput
               label="Jumlah (Rp)"
               value={form.amount}
               onChange={(v) => setForm({ ...form, amount: v })}
-              prefix="Rp"
             />
             <Select
               label="Tipe"
@@ -148,9 +147,9 @@ export function TreasuryPage() {
 
       <Card title="Threshold Minimum Cash">
         <div className="flex items-center gap-4">
-          <Input
+          <RupiahInput
             label="Set minimum cash (Rp)"
-            value={String(state.minCashThreshold)}
+            value={state.minCashThreshold}
             onChange={(v) => updateMinCashThreshold(parseInputNumber(v))}
           />
           <p className="text-sm text-surface-400">

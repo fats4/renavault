@@ -11,14 +11,14 @@ import {
 } from 'recharts'
 import { CheckCircle2, XCircle } from 'lucide-react'
 import { useFinance } from '../context/FinanceContext'
-import { Card, Input, StatCard } from '../components/ui'
-import { formatCurrency, formatPercent, parseInputNumber } from '../lib/format'
+import { Card, Input, RupiahInput, StatCard } from '../components/ui'
+import { formatCurrency, formatPercent, formatRupiahInput, parseInputNumber } from '../lib/format'
 import { projectCashFlow, simulateDropSpend } from '../lib/calculations'
 
 export function FPAPage() {
   const { state, updateBudget } = useFinance()
-  const [spendAmount, setSpendAmount] = useState('210000000')
-  const [expectedRevenue, setExpectedRevenue] = useState('450000000')
+  const [spendAmount, setSpendAmount] = useState('')
+  const [expectedRevenue, setExpectedRevenue] = useState('')
   const [monthsAhead, setMonthsAhead] = useState('3')
 
   const spend = parseInputNumber(spendAmount)
@@ -58,19 +58,15 @@ export function FPAPage() {
       >
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <div className="space-y-4">
-            <Input
+            <RupiahInput
               label="Spend Produksi Drop (Rp)"
               value={spendAmount}
               onChange={setSpendAmount}
-              type="text"
-              prefix="Rp"
             />
-            <Input
+            <RupiahInput
               label="Expected Revenue Drop (Rp)"
               value={expectedRevenue}
               onChange={setExpectedRevenue}
-              type="text"
-              prefix="Rp"
             />
             <Input
               label="Bulan sampai akhir quarter"
@@ -181,12 +177,13 @@ export function FPAPage() {
                     </td>
                     <td className="py-3 pr-4">
                       <input
-                        type="number"
-                        value={b.actual}
+                        type="text"
+                        inputMode="numeric"
+                        value={formatRupiahInput(b.actual)}
                         onChange={(e) =>
                           updateBudget(b.id, { actual: parseInputNumber(e.target.value) })
                         }
-                        className="w-32 rounded border border-surface-600 bg-surface-800 px-2 py-1 font-mono text-sm text-white"
+                        className="w-36 rounded border border-surface-600 bg-surface-800 px-2 py-1 font-mono text-sm text-white"
                       />
                     </td>
                     <td className="py-3 pr-4 font-mono">

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { CheckCircle2, Circle } from 'lucide-react'
 import { useFinance } from '../context/FinanceContext'
-import { Card, Button, Input, Select, StatCard, Badge } from '../components/ui'
+import { Card, Button, Input, RupiahInput, Select, StatCard, Badge } from '../components/ui'
 import { formatCurrency, formatPercent, parseInputNumber } from '../lib/format'
 import { getMonthlyBurn, getRunwayMonths, getNetProfit } from '../lib/calculations'
 
@@ -138,7 +138,7 @@ export function FundraisingPage() {
                 { value: 'loan', label: 'Pinjaman / Debt' },
               ]}
             />
-            <Input label="Amount (Rp)" value={form.amount} onChange={(v) => setForm({ ...form, amount: v })} prefix="Rp" />
+            <RupiahInput label="Amount (Rp)" value={form.amount} onChange={(v) => setForm({ ...form, amount: v })} />
             <Input label="Equity (%)" value={form.equity} onChange={(v) => setForm({ ...form, equity: v })} type="number" />
             <Input label="Tanggal" value={form.date} onChange={(v) => setForm({ ...form, date: v })} type="date" />
             <Select

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { formatRupiahInput } from '../../lib/format'
 
 interface CardProps {
   children: ReactNode
@@ -160,6 +161,63 @@ export function Select({ label, value, onChange, options }: SelectProps) {
           </option>
         ))}
       </select>
+    </label>
+  )
+}
+
+interface RupiahInputProps {
+  label?: string
+  value: string | number
+  onChange: (formatted: string) => void
+  onValueChange?: (amount: number) => void
+  placeholder?: string
+  className?: string
+  inputClassName?: string
+}
+
+export function RupiahInput({
+  label,
+  value,
+  onChange,
+  onValueChange,
+  placeholder = '0',
+  className = '',
+  inputClassName = '',
+}: RupiahInputProps) {
+  const display =
+    typeof value === 'number'
+      ? formatRupiahInput(value)
+      : value === ''
+        ? ''
+        : formatRupiahInput(value)
+
+  const handleChange = (raw: string) => {
+    const digits = raw.replace(/\D/g, '')
+    if (digits === '') {
+      onChange('')
+      onValueChange?.(0)
+      return
+    }
+    const num = Number(digits)
+    const formatted = formatRupiahInput(num)
+    onChange(formatted)
+    onValueChange?.(num)
+  }
+
+  return (
+    <label className={`block ${className}`}>
+      {label && <span className="mb-1.5 block text-xs font-medium text-surface-400">{label}</span>}
+      <div className="relative">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-surface-500">Rp</span>
+        <input
+          type="text"
+          inputMode="numeric"
+          value={display}
+          onChange={(e) => handleChange(e.target.value)}
+          placeholder={placeholder}
+          className={`w-full rounded-lg border border-surface-600 bg-surface-800 py-2 pl-8 pr-3 font-mono text-sm text-white placeholder:text-surface-500 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent ${inputClassName}`}
+        />
+      </div>
     </label>
   )
 }

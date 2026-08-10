@@ -1,15 +1,12 @@
 import { useState } from 'react'
 import { Gem, Loader2 } from 'lucide-react'
 import { getAuthErrorMessage, useAuth } from '../context/AuthContext'
-import { getAllowedEmails } from '../lib/auth.config'
 import { Button } from '../components/ui'
 
 export function LoginPage() {
   const { loginWithGoogle } = useAuth()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  const allowedEmails = getAllowedEmails()
 
   const handleGoogle = async () => {
     setError(null)
@@ -52,19 +49,6 @@ export function LoginPage() {
               'Lanjutkan dengan Google'
             )}
           </Button>
-
-          {allowedEmails.length > 0 && (
-            <div className="mt-5 rounded-lg bg-surface-800 p-3">
-              <p className="text-[10px] uppercase tracking-wider text-surface-500">Akun diizinkan</p>
-              <ul className="mt-2 space-y-1">
-                {allowedEmails.map((email) => (
-                  <li key={email} className="truncate text-xs text-surface-300">
-                    {email}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
         </div>
       </div>
     </div>

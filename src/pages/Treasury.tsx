@@ -148,11 +148,11 @@ export function TreasuryPage() {
   }
 
   const handleDeleteTx = (t: Transaction) => {
-    if (confirm(`Hapus transaksi "${t.description}"?`)) deleteTransaction(t.id)
+    deleteTransaction(t.id)
   }
 
   const handleDeleteProd = (p: ProductionItem) => {
-    if (confirm(`Hapus produksi "${p.name}"?`)) deleteProduction(p.id)
+    deleteProduction(p.id)
   }
 
   const isLowCash = state.cashBalance < state.minCashThreshold
@@ -441,10 +441,20 @@ function TransactionRow({
           {t.type === 'income' ? '+' : '-'}
           {formatCurrency(t.amount, true)}
         </span>
-        <button onClick={onEdit} className="rounded p-1.5 text-surface-400 hover:bg-surface-700 hover:text-white" title="Edit">
+        <button
+          type="button"
+          onClick={onEdit}
+          className="rounded p-1.5 text-surface-400 hover:bg-surface-700 hover:text-white"
+          title="Edit"
+        >
           <Pencil className="h-3.5 w-3.5" />
         </button>
-        <button onClick={onDelete} className="rounded p-1.5 text-surface-400 hover:bg-negative/15 hover:text-negative" title="Hapus">
+        <button
+          type="button"
+          onClick={onDelete}
+          className="rounded p-1.5 text-surface-400 hover:bg-negative/15 hover:text-negative"
+          title="Hapus"
+        >
           <Trash2 className="h-3.5 w-3.5" />
         </button>
       </div>

@@ -69,6 +69,36 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null)
   const storageBackend = getStorageBackend()
   const readyToSave = useRef(false)
+  const isDirty = useRef(false)
+  const skipNextRemote = useRef(false)
+
+  const persistNow = useCallback(async (nextState: FinanceState) => {
+    isDirty.current = true
+    skipNextRemote.current = true
+    setSaving(true)
+    try {
+      await saveFinanceState(nextState)
+      setError(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Gagal menyimpan data')
+    } finally {
+      isDirty.current = false
+      setSaving(false)
+    }
+  }, [])
+
+  const applyMutation = useCallback(
+    (updater: (current: FinanceState) => FinanceState, immediate = false) => {
+      setState((current) => {
+        const next = updater(current)
+        if (next !== current && immediate) {
+          void persistNow(next)
+        }
+        return next
+      })
+    },
+    [persistNow],
+  )
 
   useEffect(() => {
     readyToSave.current = false
@@ -76,6 +106,12 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
 
     const unsubscribe = subscribeFinanceState(
       (data) => {
+        if (skipNextRemote.current) {
+          skipNextRemote.current = false
+          return
+        }
+        if (isDirty.current) return
+
         setState((prev) => {
           if (JSON.stringify(prev) === JSON.stringify(data)) return prev
           return data
@@ -94,7 +130,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
-    if (!readyToSave.current || loading) return
+    if (!readyToSave.current || loading || isDirty.current) return
 
     setSaving(true)
     const timer = setTimeout(async () => {
@@ -111,124 +147,182 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     return () => clearTimeout(timer)
   }, [state, loading])
 
-  const updateCashBalance = useCallback((amount: number) => {
-    setState((s) => ({ ...s, cashBalance: amount }))
-  }, [])
+  const updateCashBalance = useCallback(
+    (amount: number) => applyMutation((s) => ({ ...s, cashBalance: amount })),
+    [applyMutation],
+  )
 
-  const updateMinCashThreshold = useCallback((amount: number) => {
-    setState((s) => ({ ...s, minCashThreshold: amount }))
-  }, [])
+  const updateMinCashThreshold = useCallback(
+    (amount: number) => applyMutation((s) => ({ ...s, minCashThreshold: amount })),
+    [applyMutation],
+  )
 
-  const addTransaction = useCallback((tx: Omit<Transaction, 'id'>) => {
-    const full = { ...tx, id: uid() }
-    setState((s) => ({
-      ...s,
-      transactions: [...s.transactions, full],
-      cashBalance: s.cashBalance + transactionCashEffect(full),
-    }))
-  }, [])
+  const addTransaction = useCallback(
+    (tx: Omit<Transaction, 'id'>) => {
+      const full = { ...tx, id: uid() }
+      applyMutation(
+        (s) => ({
+          ...s,
+          transactions: [...s.transactions, full],
+          cashBalance: s.cashBalance + transactionCashEffect(full),
+        }),
+        true,
+      )
+    },
+    [applyMutation],
+  )
 
-  const updateTransaction = useCallback((id: string, updates: Partial<Transaction>) => {
-    setState((s) => {
-      const old = s.transactions.find((t) => t.id === id)
-      if (!old) return s
-      const updated = { ...old, ...updates }
-      const cashDelta = transactionCashEffect(updated) - transactionCashEffect(old)
-      return {
+  const updateTransaction = useCallback(
+    (id: string, updates: Partial<Transaction>) => {
+      applyMutation((s) => {
+        const old = s.transactions.find((t) => t.id === id)
+        if (!old) return s
+        const updated = { ...old, ...updates }
+        const cashDelta = transactionCashEffect(updated) - transactionCashEffect(old)
+        return {
+          ...s,
+          cashBalance: s.cashBalance + cashDelta,
+          transactions: s.transactions.map((t) => (t.id === id ? updated : t)),
+        }
+      }, true)
+    },
+    [applyMutation],
+  )
+
+  const deleteTransaction = useCallback(
+    (id: string) => {
+      applyMutation((s) => {
+        const old = s.transactions.find((t) => t.id === id)
+        if (!old) return s
+        return {
+          ...s,
+          cashBalance: s.cashBalance - transactionCashEffect(old),
+          transactions: s.transactions.filter((t) => t.id !== id),
+        }
+      }, true)
+    },
+    [applyMutation],
+  )
+
+  const addProduction = useCallback(
+    (item: Omit<ProductionItem, 'id'>) => {
+      applyMutation(
+        (s) => ({
+          ...s,
+          productions: [...s.productions, { ...item, id: uid() }],
+        }),
+        true,
+      )
+    },
+    [applyMutation],
+  )
+
+  const updateProduction = useCallback(
+    (id: string, updates: Partial<ProductionItem>) => {
+      applyMutation(
+        (s) => ({
+          ...s,
+          productions: s.productions.map((p) => (p.id === id ? { ...p, ...updates } : p)),
+        }),
+        true,
+      )
+    },
+    [applyMutation],
+  )
+
+  const deleteProduction = useCallback(
+    (id: string) => {
+      applyMutation(
+        (s) => ({
+          ...s,
+          productions: s.productions.filter((p) => p.id !== id),
+        }),
+        true,
+      )
+    },
+    [applyMutation],
+  )
+
+  const markProductionPaid = useCallback(
+    (id: string) => {
+      applyMutation(
+        (s) => ({
+          ...s,
+          productions: s.productions.map((p) =>
+            p.id === id ? { ...p, paidAmount: p.totalAmount } : p,
+          ),
+        }),
+        true,
+      )
+    },
+    [applyMutation],
+  )
+
+  const updateBudget = useCallback(
+    (id: string, updates: Partial<BudgetItem>) => {
+      applyMutation((s) => ({
         ...s,
-        cashBalance: s.cashBalance + cashDelta,
-        transactions: s.transactions.map((t) => (t.id === id ? updated : t)),
-      }
-    })
-  }, [])
+        budgets: s.budgets.map((b) => (b.id === id ? { ...b, ...updates } : b)),
+      }))
+    },
+    [applyMutation],
+  )
 
-  const deleteTransaction = useCallback((id: string) => {
-    setState((s) => {
-      const old = s.transactions.find((t) => t.id === id)
-      if (!old) return s
-      return {
+  const addDrop = useCallback(
+    (drop: Omit<DropProduct, 'id'>) => {
+      applyMutation((s) => ({
         ...s,
-        cashBalance: s.cashBalance - transactionCashEffect(old),
-        transactions: s.transactions.filter((t) => t.id !== id),
-      }
-    })
-  }, [])
+        drops: [...s.drops, { ...drop, id: uid() }],
+      }))
+    },
+    [applyMutation],
+  )
 
-  const addProduction = useCallback((item: Omit<ProductionItem, 'id'>) => {
-    setState((s) => ({
-      ...s,
-      productions: [...s.productions, { ...item, id: uid() }],
-    }))
-  }, [])
+  const updateDrop = useCallback(
+    (id: string, updates: Partial<DropProduct>) => {
+      applyMutation((s) => ({
+        ...s,
+        drops: s.drops.map((d) => (d.id === id ? { ...d, ...updates } : d)),
+      }))
+    },
+    [applyMutation],
+  )
 
-  const updateProduction = useCallback((id: string, updates: Partial<ProductionItem>) => {
-    setState((s) => ({
-      ...s,
-      productions: s.productions.map((p) => (p.id === id ? { ...p, ...updates } : p)),
-    }))
-  }, [])
+  const addInvestor = useCallback(
+    (inv: Omit<Investor, 'id'>) => {
+      applyMutation((s) => ({
+        ...s,
+        investors: [...s.investors, { ...inv, id: uid() }],
+      }))
+    },
+    [applyMutation],
+  )
 
-  const deleteProduction = useCallback((id: string) => {
-    setState((s) => ({
-      ...s,
-      productions: s.productions.filter((p) => p.id !== id),
-    }))
-  }, [])
+  const updateRisk = useCallback(
+    (id: string, updates: Partial<RiskItem>) => {
+      applyMutation((s) => ({
+        ...s,
+        risks: s.risks.map((r) => (r.id === id ? { ...r, ...updates } : r)),
+      }))
+    },
+    [applyMutation],
+  )
 
-  const markProductionPaid = useCallback((id: string) => {
-    setState((s) => ({
-      ...s,
-      productions: s.productions.map((p) =>
-        p.id === id ? { ...p, paidAmount: p.totalAmount } : p,
-      ),
-    }))
-  }, [])
-
-  const updateBudget = useCallback((id: string, updates: Partial<BudgetItem>) => {
-    setState((s) => ({
-      ...s,
-      budgets: s.budgets.map((b) => (b.id === id ? { ...b, ...updates } : b)),
-    }))
-  }, [])
-
-  const addDrop = useCallback((drop: Omit<DropProduct, 'id'>) => {
-    setState((s) => ({
-      ...s,
-      drops: [...s.drops, { ...drop, id: uid() }],
-    }))
-  }, [])
-
-  const updateDrop = useCallback((id: string, updates: Partial<DropProduct>) => {
-    setState((s) => ({
-      ...s,
-      drops: s.drops.map((d) => (d.id === id ? { ...d, ...updates } : d)),
-    }))
-  }, [])
-
-  const addInvestor = useCallback((inv: Omit<Investor, 'id'>) => {
-    setState((s) => ({
-      ...s,
-      investors: [...s.investors, { ...inv, id: uid() }],
-    }))
-  }, [])
-
-  const updateRisk = useCallback((id: string, updates: Partial<RiskItem>) => {
-    setState((s) => ({
-      ...s,
-      risks: s.risks.map((r) => (r.id === id ? { ...r, ...updates } : r)),
-    }))
-  }, [])
-
-  const updateApproval = useCallback((id: string, status: ApprovalRequest['status']) => {
-    setState((s) => ({
-      ...s,
-      approvals: s.approvals.map((a) => (a.id === id ? { ...a, status } : a)),
-    }))
-  }, [])
+  const updateApproval = useCallback(
+    (id: string, status: ApprovalRequest['status']) => {
+      applyMutation((s) => ({
+        ...s,
+        approvals: s.approvals.map((a) => (a.id === id ? { ...a, status } : a)),
+      }))
+    },
+    [applyMutation],
+  )
 
   const resetData = useCallback(async () => {
+    isDirty.current = true
     const data = await resetFinanceState()
     setState(data)
+    isDirty.current = false
   }, [])
 
   const value = useMemo(

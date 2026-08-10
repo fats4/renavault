@@ -1,0 +1,56 @@
+import type { FinanceState } from '../types'
+
+export const SEED_DATA: FinanceState = {
+  cashBalance: 485_000_000,
+  minCashThreshold: 50_000_000,
+  taxRate: 22,
+  transactions: [
+    { id: 't1', date: '2026-01-15', description: 'Drop SS26 — Batch 1', category: 'Penjualan', amount: 320_000_000, type: 'income', status: 'completed' },
+    { id: 't2', date: '2026-01-20', description: 'Produksi Drop SS26', category: 'COGS', amount: 145_000_000, type: 'expense', status: 'completed' },
+    { id: 't3', date: '2026-02-01', description: 'Gaji Tim', category: 'Operasional', amount: 45_000_000, type: 'expense', status: 'completed' },
+    { id: 't4', date: '2026-02-05', description: 'Marketing IG/TikTok', category: 'Marketing', amount: 18_000_000, type: 'expense', status: 'completed' },
+    { id: 't5', date: '2026-02-10', description: 'Drop SS26 — Batch 2', category: 'Penjualan', amount: 185_000_000, type: 'income', status: 'completed' },
+    { id: 't6', date: '2026-02-15', description: 'Sewa Studio & Warehouse', category: 'Operasional', amount: 12_000_000, type: 'expense', status: 'completed' },
+    { id: 't7', date: '2026-03-01', description: 'Gaji Tim', category: 'Operasional', amount: 45_000_000, type: 'expense', status: 'completed' },
+    { id: 't8', date: '2026-03-05', description: 'Packaging & Label', category: 'COGS', amount: 8_500_000, type: 'expense', status: 'completed' },
+    { id: 't9', date: '2026-03-10', description: 'Pop-up Event Revenue', category: 'Penjualan', amount: 95_000_000, type: 'income', status: 'completed' },
+    { id: 't10', date: '2026-04-01', description: 'Gaji Tim', category: 'Operasional', amount: 45_000_000, type: 'expense', status: 'scheduled' },
+    { id: 't11', date: '2026-04-15', description: 'Produksi Drop FW26', category: 'COGS', amount: 210_000_000, type: 'expense', status: 'scheduled' },
+    { id: 't12', date: '2026-05-01', description: 'Drop FW26 — Pre-order', category: 'Penjualan', amount: 450_000_000, type: 'income', status: 'scheduled' },
+    { id: 't13', date: '2026-05-15', description: 'Photo Shoot Campaign', category: 'Marketing', amount: 25_000_000, type: 'expense', status: 'pending' },
+    { id: 't14', date: '2026-06-01', description: 'Gaji Tim', category: 'Operasional', amount: 45_000_000, type: 'expense', status: 'scheduled' },
+  ],
+  budgets: [
+    { id: 'b1', category: 'COGS / Produksi', planned: 400_000_000, actual: 153_500_000, quarter: 'Q2 2026' },
+    { id: 'b2', category: 'Marketing', planned: 80_000_000, actual: 18_000_000, quarter: 'Q2 2026' },
+    { id: 'b3', category: 'Operasional', planned: 150_000_000, actual: 102_000_000, quarter: 'Q2 2026' },
+    { id: 'b4', category: 'Gaji & HR', planned: 135_000_000, actual: 90_000_000, quarter: 'Q2 2026' },
+    { id: 'b5', category: 'Logistik & Fulfillment', planned: 40_000_000, actual: 12_000_000, quarter: 'Q2 2026' },
+  ],
+  drops: [
+    { id: 'd1', name: 'Oversized Tee "Vault"', sku: 'RV-SS26-001', cogs: 185_000, sellPrice: 549_000, units: 500, dropDate: '2026-02-01', status: 'sold_out' },
+    { id: 'd2', name: 'Cargo Pants "Archive"', sku: 'RV-SS26-002', cogs: 320_000, sellPrice: 899_000, units: 300, dropDate: '2026-02-01', status: 'sold_out' },
+    { id: 'd3', name: 'Hoodie "Genesis"', sku: 'RV-FW26-001', cogs: 410_000, sellPrice: 1_199_000, units: 400, dropDate: '2026-05-01', status: 'production' },
+    { id: 'd4', name: 'Cap "Monogram"', sku: 'RV-FW26-002', cogs: 95_000, sellPrice: 349_000, units: 600, dropDate: '2026-05-01', status: 'planning' },
+    { id: 'd5', name: 'Jacket "Legacy"', sku: 'RV-FW26-003', cogs: 580_000, sellPrice: 1_699_000, units: 200, dropDate: '2026-05-01', status: 'planning' },
+  ],
+  investors: [
+    { id: 'i1', name: 'Angel — Budi Santoso', type: 'angel', amount: 500_000_000, equity: 8, date: '2024-06-01', status: 'active' },
+    { id: 'i2', name: 'Seed VC — Alpha Ventures', type: 'vc', amount: 2_000_000_000, equity: 15, date: '2025-03-15', status: 'active' },
+    { id: 'i3', name: 'Bank Mandiri — Kredit Modal', type: 'loan', amount: 300_000_000, equity: 0, date: '2025-09-01', status: 'active' },
+    { id: 'i4', name: 'Strategic — Retail Partner X', type: 'strategic', amount: 750_000_000, equity: 5, date: '2026-01-01', status: 'prospect' },
+  ],
+  risks: [
+    { id: 'r1', title: 'Pembayaran vendor tanpa PO', category: 'leakage', severity: 'high', status: 'open', description: '3 transaksi vendor bulan lalu tanpa purchase order resmi', owner: 'Finance Lead' },
+    { id: 'r2', title: 'Akses rekening bank shared', category: 'fraud', severity: 'critical', status: 'open', description: 'Password rekening operasional dibagi ke 5 orang', owner: 'CEO' },
+    { id: 'r3', title: 'Commitment produksi FW26 tanpa forecast', category: 'commitment', severity: 'medium', status: 'mitigated', description: 'PO produksi sudah ditandatangani sebelum forecast penjualan final', owner: 'COO' },
+    { id: 'r4', title: 'Pajak PPN belum disetor Q1', category: 'compliance', severity: 'high', status: 'open', description: 'Setoran PPN Q1 2026 belum dilakukan', owner: 'Finance Lead' },
+    { id: 'r5', title: 'Refund rate naik 12%', category: 'leakage', severity: 'medium', status: 'open', description: 'Refund rate naik dari 3% ke 12% sejak drop terakhir', owner: 'Ops Lead' },
+  ],
+  approvals: [
+    { id: 'a1', title: 'Produksi tambahan Hoodie Genesis (+100 unit)', amount: 41_000_000, requester: 'Creative Director', date: '2026-03-28', status: 'pending', category: 'COGS' },
+    { id: 'a2', title: 'Influencer campaign Q2', amount: 35_000_000, requester: 'Marketing Lead', date: '2026-03-25', status: 'pending', category: 'Marketing' },
+    { id: 'a3', title: 'Upgrade packaging premium', amount: 15_000_000, requester: 'Ops Lead', date: '2026-03-20', status: 'approved', category: 'Operasional' },
+    { id: 'a4', title: 'Pop-up store rental — Surabaya', amount: 28_000_000, requester: 'Brand Manager', date: '2026-03-15', status: 'rejected', category: 'Marketing' },
+  ],
+}

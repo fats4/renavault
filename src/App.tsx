@@ -44,7 +44,7 @@ function AppContent() {
   }
 
   return (
-    <FinanceProvider userId={user?.uid}>
+    <FinanceProvider>
       <BrowserRouter>
         <FinanceRoutes />
       </BrowserRouter>

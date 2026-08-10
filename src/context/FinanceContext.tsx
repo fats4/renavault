@@ -50,13 +50,7 @@ function uid() {
   return crypto.randomUUID()
 }
 
-export function FinanceProvider({
-  children,
-  userId,
-}: {
-  children: ReactNode
-  userId?: string
-}) {
+export function FinanceProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<FinanceState>(SEED_DATA)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -69,7 +63,6 @@ export function FinanceProvider({
     setLoading(true)
 
     const unsubscribe = subscribeFinanceState(
-      userId ?? 'local',
       (data) => {
         setState((prev) => {
           if (JSON.stringify(prev) === JSON.stringify(data)) return prev
@@ -86,16 +79,15 @@ export function FinanceProvider({
     )
 
     return unsubscribe
-  }, [userId])
+  }, [])
 
   useEffect(() => {
     if (!readyToSave.current || loading) return
-    if (storageBackend === 'firebase' && !userId) return
 
     setSaving(true)
     const timer = setTimeout(async () => {
       try {
-        await saveFinanceState(userId ?? 'local', state)
+        await saveFinanceState(state)
         setError(null)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Gagal menyimpan data')
@@ -105,7 +97,7 @@ export function FinanceProvider({
     }, 400)
 
     return () => clearTimeout(timer)
-  }, [state, loading, userId])
+  }, [state, loading])
 
   const updateCashBalance = useCallback((amount: number) => {
     setState((s) => ({ ...s, cashBalance: amount }))
@@ -171,9 +163,9 @@ export function FinanceProvider({
   }, [])
 
   const resetData = useCallback(async () => {
-    const data = await resetFinanceState(userId ?? 'local')
+    const data = await resetFinanceState()
     setState(data)
-  }, [userId])
+  }, [])
 
   const value = useMemo(
     () => ({

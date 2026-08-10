@@ -18,7 +18,7 @@ import {
 import { SEED_DATA } from './seedData'
 import { loadStateLocal, resetStateLocal, saveStateLocal } from './storage'
 
-const MODULES_SUBCOLLECTION = 'modules'
+const MODULE_COLLECTION = 'modules'
 
 export type StorageBackend = 'firebase' | 'local'
 
@@ -26,34 +26,33 @@ export function getStorageBackend(): StorageBackend {
   return isFirebaseConfigured() ? 'firebase' : 'local'
 }
 
-function moduleRef(userId: string, id: ModuleId): DocumentReference {
+function moduleRef(id: ModuleId): DocumentReference {
   if (!db) throw new Error('Firestore belum diinisialisasi')
-  return doc(db, 'users', userId, MODULES_SUBCOLLECTION, id)
+  return doc(db, MODULE_COLLECTION, id)
 }
 
-async function saveAllModules(userId: string, state: FinanceState): Promise<void> {
+async function saveAllModules(state: FinanceState): Promise<void> {
   if (!db) throw new Error('Firestore belum diinisialisasi')
   const parts = splitState(state)
-  await Promise.all(MODULE_IDS.map((id) => setDoc(moduleRef(userId, id), parts[id])))
+  await Promise.all(MODULE_IDS.map((id) => setDoc(moduleRef(id), parts[id])))
 }
 
-async function ensureModulesSeeded(userId: string, fallback: FinanceState): Promise<void> {
+async function ensureModulesSeeded(fallback: FinanceState): Promise<void> {
   if (!db) return
 
   const parts = splitState(fallback)
   await Promise.all(
     MODULE_IDS.map(async (id) => {
-      const snap = await getDoc(moduleRef(userId, id))
+      const snap = await getDoc(moduleRef(id))
       if (!snap.exists()) {
-        await setDoc(moduleRef(userId, id), parts[id])
+        await setDoc(moduleRef(id), parts[id])
       }
     }),
   )
 }
 
-/** Subscribe to all module documents for a user — real-time sync per bagian */
+/** Subscribe to shared module documents — database sama untuk semua akun */
 export function subscribeFinanceState(
-  userId: string,
   onData: (state: FinanceState) => void,
   onError: (error: Error) => void,
 ): Unsubscribe {
@@ -67,7 +66,7 @@ export function subscribeFinanceState(
 
   void (async () => {
     try {
-      await ensureModulesSeeded(userId, SEED_DATA)
+      await ensureModulesSeeded(SEED_DATA)
 
       if (cancelled) return
 
@@ -82,7 +81,7 @@ export function subscribeFinanceState(
       for (const id of MODULE_IDS) {
         unsubscribers.push(
           onSnapshot(
-            moduleRef(userId, id),
+            moduleRef(id),
             (snapshot) => {
               if (snapshot.exists()) {
                 ;(parts as Record<ModuleId, ModuleDocMap[ModuleId]>)[id] =
@@ -105,33 +104,27 @@ export function subscribeFinanceState(
   }
 }
 
-/** Persist each module to its own Firestore document */
-export async function saveFinanceState(userId: string, state: FinanceState): Promise<void> {
+export async function saveFinanceState(state: FinanceState): Promise<void> {
   if (!isFirebaseConfigured() || !db) {
     saveStateLocal(state)
     return
   }
-
-  await saveAllModules(userId, state)
+  await saveAllModules(state)
 }
 
-/** Reset all modules to empty seed data */
-export async function resetFinanceState(userId: string): Promise<FinanceState> {
+export async function resetFinanceState(): Promise<FinanceState> {
   if (!isFirebaseConfigured() || !db) {
     return resetStateLocal()
   }
-
-  await saveAllModules(userId, SEED_DATA)
+  await saveAllModules(SEED_DATA)
   localStorage.removeItem('renavault-finance')
   return SEED_DATA
 }
 
-/** Save a single module document */
 export async function saveModule<K extends ModuleId>(
-  userId: string,
   id: K,
   data: ModuleDocMap[K],
 ): Promise<void> {
   if (!isFirebaseConfigured() || !db) return
-  await setDoc(moduleRef(userId, id), data)
+  await setDoc(moduleRef(id), data)
 }

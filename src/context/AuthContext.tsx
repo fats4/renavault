@@ -1,10 +1,7 @@
 import type { FirebaseError } from 'firebase/app'
 import {
-  createUserWithEmailAndPassword,
   GoogleAuthProvider,
   onAuthStateChanged,
-  sendPasswordResetEmail,
-  signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
   type User,
@@ -18,34 +15,28 @@ import {
   useState,
   type ReactNode,
 } from 'react'
+import { isEmailAllowed } from '../lib/auth.config'
 import { auth, isFirebaseConfigured } from '../lib/firebase'
 
 interface AuthContextValue {
   user: User | null
   loading: boolean
   authRequired: boolean
-  login: (email: string, password: string) => Promise<void>
-  signup: (email: string, password: string) => Promise<void>
   loginWithGoogle: () => Promise<void>
-  resetPassword: (email: string) => Promise<void>
   logout: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
-export function mapAuthError(code: string): string {
-  const messages: Record<string, string> = {
-    'auth/invalid-email': 'Email tidak valid.',
-    'auth/user-disabled': 'Akun dinonaktifkan.',
-    'auth/user-not-found': 'Email belum terdaftar.',
-    'auth/wrong-password': 'Password salah.',
-    'auth/invalid-credential': 'Email atau password salah.',
-    'auth/email-already-in-use': 'Email sudah terdaftar.',
-    'auth/weak-password': 'Password minimal 6 karakter.',
-    'auth/popup-closed-by-user': 'Login Google dibatalkan.',
-    'auth/too-many-requests': 'Terlalu banyak percobaan. Coba lagi nanti.',
+const ACCESS_DENIED_MSG = 'Akun Google ini tidak diizinkan. Hanya 2 akun terdaftar yang bisa akses.'
+
+async function enforceAllowedUser(user: User | null): Promise<User | null> {
+  if (!user) return null
+  if (!isEmailAllowed(user.email)) {
+    if (auth) await signOut(auth)
+    throw new Error(ACCESS_DENIED_MSG)
   }
-  return messages[code] ?? 'Terjadi kesalahan. Coba lagi.'
+  return user
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -59,30 +50,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return
     }
 
-    return onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser)
+    return onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser && !isEmailAllowed(currentUser.email)) {
+        await signOut(auth!)
+        setUser(null)
+      } else {
+        setUser(currentUser)
+      }
       setLoading(false)
     })
   }, [])
 
-  const login = useCallback(async (email: string, password: string) => {
-    if (!auth) throw new Error('Firebase Auth belum dikonfigurasi')
-    await signInWithEmailAndPassword(auth, email, password)
-  }, [])
-
-  const signup = useCallback(async (email: string, password: string) => {
-    if (!auth) throw new Error('Firebase Auth belum dikonfigurasi')
-    await createUserWithEmailAndPassword(auth, email, password)
-  }, [])
-
   const loginWithGoogle = useCallback(async () => {
     if (!auth) throw new Error('Firebase Auth belum dikonfigurasi')
-    await signInWithPopup(auth, new GoogleAuthProvider())
-  }, [])
-
-  const resetPassword = useCallback(async (email: string) => {
-    if (!auth) throw new Error('Firebase Auth belum dikonfigurasi')
-    await sendPasswordResetEmail(auth, email)
+    const result = await signInWithPopup(auth, new GoogleAuthProvider())
+    await enforceAllowedUser(result.user)
   }, [])
 
   const logout = useCallback(async () => {
@@ -95,13 +77,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       loading,
       authRequired,
-      login,
-      signup,
       loginWithGoogle,
-      resetPassword,
       logout,
     }),
-    [user, loading, authRequired, login, signup, loginWithGoogle, resetPassword, logout],
+    [user, loading, authRequired, loginWithGoogle, logout],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
@@ -114,8 +93,10 @@ export function useAuth() {
 }
 
 export function getAuthErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message
   if (err && typeof err === 'object' && 'code' in err) {
-    return mapAuthError((err as FirebaseError).code)
+    const code = (err as FirebaseError).code
+    if (code === 'auth/popup-closed-by-user') return 'Login Google dibatalkan.'
   }
-  return err instanceof Error ? err.message : 'Terjadi kesalahan.'
+  return 'Terjadi kesalahan. Coba lagi.'
 }

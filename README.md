@@ -64,42 +64,52 @@ Restart dev server setelah mengubah `.env.local`.
 ### 5. Aktifkan Authentication
 
 1. **Build → Authentication → Get started**
-2. Enable **Email/Password**
-3. Enable **Google** (opsional, tambahkan support email)
-4. **Settings → Authorized domains** → pastikan `renavault.vercel.app` ada
+2. Enable **Google** saja (Email/Password tidak diperlukan)
+3. **Settings → Authorized domains** → pastikan `renavault.vercel.app` ada
 
-### 6. Deploy Firestore Rules
+### 6. Atur 2 akun Google yang diizinkan
 
-Di Firebase Console → **Firestore → Rules**, paste isi `firestore.rules`:
+**A. Environment variable** (`.env.local` dan Vercel Dashboard):
+
+```env
+VITE_ALLOWED_EMAILS=akun1@gmail.com,akun2@gmail.com
+```
+
+**B. Firestore Rules** — ganti email di `firestore.rules` lalu publish:
 
 ```
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /users/{userId}/modules/{moduleId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-  }
+function isAllowedUser() {
+  return request.auth != null
+    && request.auth.token.email in [
+      'akun1@gmail.com',
+      'akun2@gmail.com'
+    ];
+}
+
+match /modules/{moduleId} {
+  allow read, write: if isAllowedUser();
 }
 ```
 
-Klik **Publish**.
+> Email di env dan Firestore Rules **harus sama persis**.
 
-### 7. Struktur data di Firestore
+### 7. Deploy Firestore Rules
 
-Data per user, dipisah per modul:
+Firebase Console → **Firestore → Rules** → paste **seluruh** isi `firestore.rules` → **Publish**.
+
+### 8. Struktur data di Firestore
+
+Database **shared** — kedua akun akses data yang sama:
 
 ```
-users/{userId}/modules/
-  ├── fpa           ← budgets
-  ├── treasury      ← cashBalance, transactions
-  ├── accounting    ← taxRate
-  ├── pricing       ← drops
-  ├── fundraising   ← investors
-  └── risk          ← risks, approvals
+modules/
+  ├── fpa
+  ├── treasury
+  ├── accounting
+  ├── pricing
+  ├── fundraising
+  └── risk
 ```
-
-Setiap akun punya database sendiri — data tidak tercampur antar user.
 
 ## Fallback tanpa Firebase
 

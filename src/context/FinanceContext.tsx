@@ -26,6 +26,7 @@ import {
   type StorageBackend,
 } from '../lib/firestore'
 import { SEED_DATA } from '../lib/seedData'
+import { isDuplicateTransaction, LUNAS_TRANSACTIONS } from '../lib/importLunasData'
 
 interface FinanceContextValue {
   state: FinanceState
@@ -71,6 +72,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   const readyToSave = useRef(false)
   const isDirty = useRef(false)
   const skipNextRemote = useRef(false)
+  const lunasImportDone = useRef(false)
 
   const persistNow = useCallback(async (nextState: FinanceState) => {
     isDirty.current = true
@@ -128,6 +130,28 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
 
     return unsubscribe
   }, [])
+
+  useEffect(() => {
+    if (loading || !readyToSave.current || lunasImportDone.current || isDirty.current) return
+    lunasImportDone.current = true
+
+    const toAdd = LUNAS_TRANSACTIONS.filter(
+      (incoming) => !state.transactions.some((existing) => isDuplicateTransaction(existing, incoming)),
+    )
+    if (toAdd.length === 0) return
+
+    const added = toAdd.map((tx) => ({ ...tx, id: uid() }))
+    const cashDelta = added.reduce((sum, tx) => sum + transactionCashEffect(tx), 0)
+
+    applyMutation(
+      (s) => ({
+        ...s,
+        transactions: [...s.transactions, ...added],
+        cashBalance: s.cashBalance + cashDelta,
+      }),
+      true,
+    )
+  }, [loading, state.transactions, applyMutation])
 
   useEffect(() => {
     if (!readyToSave.current || loading || isDirty.current) return

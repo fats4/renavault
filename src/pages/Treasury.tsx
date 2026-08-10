@@ -335,6 +335,7 @@ export function TreasuryPage() {
               onChange={(v) => setTxForm({ ...txForm, category: v })}
               options={[
                 { value: 'Penjualan', label: 'Penjualan' },
+                { value: 'Belanja Bahan', label: 'Belanja Bahan' },
                 { value: 'COGS', label: 'COGS / Produksi' },
                 { value: 'Operasional', label: 'Operasional' },
                 { value: 'Marketing', label: 'Marketing' },

@@ -28,7 +28,7 @@ const emptyProdForm = {
   vendor: '',
   totalAmount: '',
   paidAmount: '',
-  dueDate: new Date().toISOString().split('T')[0],
+  startDate: new Date().toISOString().split('T')[0],
   notes: '',
 }
 
@@ -95,7 +95,7 @@ export function TreasuryPage() {
       vendor: p.vendor,
       totalAmount: formatRupiahInput(p.totalAmount),
       paidAmount: formatRupiahInput(p.paidAmount),
-      dueDate: p.dueDate,
+      startDate: p.startDate,
       notes: p.notes,
     })
     setShowProdForm(true)
@@ -136,7 +136,7 @@ export function TreasuryPage() {
       vendor: prodForm.vendor,
       totalAmount: total,
       paidAmount: paid,
-      dueDate: prodForm.dueDate,
+      startDate: prodForm.startDate,
       notes: prodForm.notes,
     }
     if (editingProdId) {
@@ -222,7 +222,7 @@ export function TreasuryPage() {
             <Input label="Vendor" value={prodForm.vendor} onChange={(v) => setProdForm({ ...prodForm, vendor: v })} />
             <RupiahInput label="Total (Rp)" value={prodForm.totalAmount} onChange={(v) => setProdForm({ ...prodForm, totalAmount: v })} />
             <RupiahInput label="Sudah Dibayar (Rp)" value={prodForm.paidAmount} onChange={(v) => setProdForm({ ...prodForm, paidAmount: v })} />
-            <Input label="Jatuh Tempo" value={prodForm.dueDate} onChange={(v) => setProdForm({ ...prodForm, dueDate: v })} type="date" />
+            <Input label="Tanggal Mulai" value={prodForm.startDate} onChange={(v) => setProdForm({ ...prodForm, startDate: v })} type="date" />
             <Input label="Catatan" value={prodForm.notes} onChange={(v) => setProdForm({ ...prodForm, notes: v })} />
             <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-3">
               <Button type="submit">{editingProdId ? 'Simpan Perubahan' : 'Simpan Produksi'}</Button>
@@ -252,7 +252,7 @@ export function TreasuryPage() {
                       <div>
                         <p className="font-medium text-white">{p.name}</p>
                         <p className="text-xs text-surface-500">
-                          {p.vendor} · Jatuh tempo {formatDate(p.dueDate)}
+                          {p.vendor} · Mulai {formatDate(p.startDate)}
                         </p>
                         {p.notes && <p className="mt-1 text-xs text-surface-400">{p.notes}</p>}
                       </div>

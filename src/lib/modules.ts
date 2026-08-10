@@ -80,7 +80,10 @@ export function mergeModules(parts: Partial<ModuleDocMap>): FinanceState {
     cashBalance: parts.treasury?.cashBalance ?? SEED_DATA.cashBalance,
     minCashThreshold: parts.treasury?.minCashThreshold ?? SEED_DATA.minCashThreshold,
     transactions: parts.treasury?.transactions ?? SEED_DATA.transactions,
-    productions: parts.treasury?.productions ?? [],
+    productions: (parts.treasury?.productions ?? []).map((p) => ({
+      ...p,
+      startDate: p.startDate ?? (p as ProductionItem & { dueDate?: string }).dueDate ?? '',
+    })),
     taxRate: parts.accounting?.taxRate ?? SEED_DATA.taxRate,
     drops: parts.pricing?.drops ?? SEED_DATA.drops,
     investors: parts.fundraising?.investors ?? SEED_DATA.investors,

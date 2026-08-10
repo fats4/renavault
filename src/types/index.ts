@@ -16,7 +16,7 @@ export interface ProductionItem {
   vendor: string
   totalAmount: number
   paidAmount: number
-  dueDate: string
+  startDate: string
   notes: string
 }
 

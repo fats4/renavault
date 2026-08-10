@@ -9,7 +9,7 @@ import {
   Factory,
 } from 'lucide-react'
 import { useFinance } from '../context/FinanceContext'
-import { Card, Button, Input, RupiahInput, Select, StatCard, Badge } from '../components/ui'
+import { Card, Button, Input, RupiahInput, Select, StatCard, Badge, Modal } from '../components/ui'
 import { formatCurrency, formatDate, formatRupiahInput, parseInputNumber } from '../lib/format'
 import { getMonthlyBurn, getRunwayMonths } from '../lib/calculations'
 import type { ProductionItem, Transaction } from '../types'
@@ -75,7 +75,25 @@ export function TreasuryPage() {
     0,
   )
 
+  const openNewProdForm = () => {
+    setShowTxForm(false)
+    setEditingTxId(null)
+    setProdForm(emptyProdForm)
+    setEditingProdId(null)
+    setShowProdForm(true)
+  }
+
+  const openNewTxForm = () => {
+    setShowProdForm(false)
+    setEditingProdId(null)
+    setTxForm(emptyTxForm)
+    setEditingTxId(null)
+    setShowTxForm(true)
+  }
+
   const startEditTx = (t: Transaction) => {
+    setShowProdForm(false)
+    setEditingProdId(null)
     setEditingTxId(t.id)
     setTxForm({
       description: t.description,
@@ -89,6 +107,8 @@ export function TreasuryPage() {
   }
 
   const startEditProd = (p: ProductionItem) => {
+    setShowTxForm(false)
+    setEditingTxId(null)
     setEditingProdId(p.id)
     setProdForm({
       name: p.name,
@@ -167,26 +187,10 @@ export function TreasuryPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button
-            variant="secondary"
-            onClick={() => {
-              resetProdForm()
-              setShowProdForm(!showProdForm)
-            }}
-          >
-            {showProdForm ? 'Tutup' : '+ Produksi'}
+          <Button variant="secondary" onClick={openNewProdForm}>
+            + Produksi
           </Button>
-          <Button
-            onClick={() => {
-              if (showTxForm && !editingTxId) setShowTxForm(false)
-              else {
-                resetTxForm()
-                setShowTxForm(true)
-              }
-            }}
-          >
-            {showTxForm && !editingTxId ? 'Tutup' : '+ Transaksi'}
-          </Button>
+          <Button onClick={openNewTxForm}>+ Transaksi</Button>
         </div>
       </div>
 
@@ -215,24 +219,27 @@ export function TreasuryPage() {
         />
       </div>
 
-      {showProdForm && (
-        <Card title={editingProdId ? 'Edit Produksi' : 'Tambah Produksi'}>
-          <form onSubmit={handleProdSubmit} className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <Input label="Nama / Drop" value={prodForm.name} onChange={(v) => setProdForm({ ...prodForm, name: v })} />
-            <Input label="Vendor" value={prodForm.vendor} onChange={(v) => setProdForm({ ...prodForm, vendor: v })} />
-            <RupiahInput label="Total (Rp)" value={prodForm.totalAmount} onChange={(v) => setProdForm({ ...prodForm, totalAmount: v })} />
-            <RupiahInput label="Sudah Dibayar (Rp)" value={prodForm.paidAmount} onChange={(v) => setProdForm({ ...prodForm, paidAmount: v })} />
-            <Input label="Tanggal Mulai" value={prodForm.startDate} onChange={(v) => setProdForm({ ...prodForm, startDate: v })} type="date" />
-            <Input label="Catatan" value={prodForm.notes} onChange={(v) => setProdForm({ ...prodForm, notes: v })} />
-            <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-3">
-              <Button type="submit">{editingProdId ? 'Simpan Perubahan' : 'Simpan Produksi'}</Button>
-              <Button type="button" variant="ghost" onClick={resetProdForm}>
-                Batal
-              </Button>
-            </div>
-          </form>
-        </Card>
-      )}
+      <Modal
+        open={showProdForm}
+        onClose={resetProdForm}
+        title={editingProdId ? 'Edit Produksi' : 'Tambah Produksi'}
+        subtitle="Tracking pembayaran vendor"
+      >
+        <form onSubmit={handleProdSubmit} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Input label="Nama / Drop" value={prodForm.name} onChange={(v) => setProdForm({ ...prodForm, name: v })} />
+          <Input label="Vendor" value={prodForm.vendor} onChange={(v) => setProdForm({ ...prodForm, vendor: v })} />
+          <RupiahInput label="Total (Rp)" value={prodForm.totalAmount} onChange={(v) => setProdForm({ ...prodForm, totalAmount: v })} />
+          <RupiahInput label="Sudah Dibayar (Rp)" value={prodForm.paidAmount} onChange={(v) => setProdForm({ ...prodForm, paidAmount: v })} />
+          <Input label="Tanggal Mulai" value={prodForm.startDate} onChange={(v) => setProdForm({ ...prodForm, startDate: v })} type="date" />
+          <Input label="Catatan" value={prodForm.notes} onChange={(v) => setProdForm({ ...prodForm, notes: v })} />
+          <div className="flex items-end gap-2 sm:col-span-2">
+            <Button type="submit">{editingProdId ? 'Simpan Perubahan' : 'Simpan Produksi'}</Button>
+            <Button type="button" variant="ghost" onClick={resetProdForm}>
+              Batal
+            </Button>
+          </div>
+        </form>
+      </Modal>
 
       <Card title="Produksi" subtitle="Tracking pembayaran vendor — total, sudah dibayar, sisa">
         {state.productions.length === 0 ? (
@@ -315,52 +322,55 @@ export function TreasuryPage() {
         )}
       </Card>
 
-      {showTxForm && (
-        <Card title={editingTxId ? 'Edit Transaksi' : 'Tambah Transaksi'}>
-          <form onSubmit={handleTxSubmit} className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <Input label="Deskripsi" value={txForm.description} onChange={(v) => setTxForm({ ...txForm, description: v })} />
-            <RupiahInput label="Jumlah (Rp)" value={txForm.amount} onChange={(v) => setTxForm({ ...txForm, amount: v })} />
-            <Select
-              label="Tipe"
-              value={txForm.type}
-              onChange={(v) => setTxForm({ ...txForm, type: v as 'income' | 'expense' })}
-              options={[
-                { value: 'income', label: 'Uang Masuk' },
-                { value: 'expense', label: 'Uang Keluar' },
-              ]}
-            />
-            <Select
-              label="Kategori"
-              value={txForm.category}
-              onChange={(v) => setTxForm({ ...txForm, category: v })}
-              options={[
-                { value: 'Penjualan', label: 'Penjualan' },
-                { value: 'Belanja Bahan', label: 'Belanja Bahan' },
-                { value: 'COGS', label: 'COGS / Produksi' },
-                { value: 'Operasional', label: 'Operasional' },
-                { value: 'Marketing', label: 'Marketing' },
-              ]}
-            />
-            <Input label="Tanggal" value={txForm.date} onChange={(v) => setTxForm({ ...txForm, date: v })} type="date" />
-            <Select
-              label="Status"
-              value={txForm.status}
-              onChange={(v) => setTxForm({ ...txForm, status: v as Transaction['status'] })}
-              options={[
-                { value: 'completed', label: 'Selesai' },
-                { value: 'scheduled', label: 'Terjadwal' },
-                { value: 'pending', label: 'Pending' },
-              ]}
-            />
-            <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-3">
-              <Button type="submit">{editingTxId ? 'Simpan Perubahan' : 'Simpan Transaksi'}</Button>
-              <Button type="button" variant="ghost" onClick={resetTxForm}>
-                Batal
-              </Button>
-            </div>
-          </form>
-        </Card>
-      )}
+      <Modal
+        open={showTxForm}
+        onClose={resetTxForm}
+        title={editingTxId ? 'Edit Transaksi' : 'Tambah Transaksi'}
+        subtitle="Catat uang masuk atau keluar"
+      >
+        <form onSubmit={handleTxSubmit} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Input label="Deskripsi" value={txForm.description} onChange={(v) => setTxForm({ ...txForm, description: v })} />
+          <RupiahInput label="Jumlah (Rp)" value={txForm.amount} onChange={(v) => setTxForm({ ...txForm, amount: v })} />
+          <Select
+            label="Tipe"
+            value={txForm.type}
+            onChange={(v) => setTxForm({ ...txForm, type: v as 'income' | 'expense' })}
+            options={[
+              { value: 'income', label: 'Uang Masuk' },
+              { value: 'expense', label: 'Uang Keluar' },
+            ]}
+          />
+          <Select
+            label="Kategori"
+            value={txForm.category}
+            onChange={(v) => setTxForm({ ...txForm, category: v })}
+            options={[
+              { value: 'Penjualan', label: 'Penjualan' },
+              { value: 'Belanja Bahan', label: 'Belanja Bahan' },
+              { value: 'COGS', label: 'COGS / Produksi' },
+              { value: 'Operasional', label: 'Operasional' },
+              { value: 'Marketing', label: 'Marketing' },
+            ]}
+          />
+          <Input label="Tanggal" value={txForm.date} onChange={(v) => setTxForm({ ...txForm, date: v })} type="date" />
+          <Select
+            label="Status"
+            value={txForm.status}
+            onChange={(v) => setTxForm({ ...txForm, status: v as Transaction['status'] })}
+            options={[
+              { value: 'completed', label: 'Selesai' },
+              { value: 'scheduled', label: 'Terjadwal' },
+              { value: 'pending', label: 'Pending' },
+            ]}
+          />
+          <div className="flex items-end gap-2 sm:col-span-2">
+            <Button type="submit">{editingTxId ? 'Simpan Perubahan' : 'Simpan Transaksi'}</Button>
+            <Button type="button" variant="ghost" onClick={resetTxForm}>
+              Batal
+            </Button>
+          </div>
+        </form>
+      </Modal>
 
       <Card title="Threshold Minimum Cash">
         <RupiahInput

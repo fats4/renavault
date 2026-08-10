@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react'
+import { useEffect, type ReactNode } from 'react'
+import { X } from 'lucide-react'
 import { formatRupiahInput } from '../../lib/format'
 
 interface CardProps {
@@ -228,5 +229,68 @@ export function RupiahInput({
         />
       </div>
     </label>
+  )
+}
+
+interface ModalProps {
+  open: boolean
+  onClose: () => void
+  title: string
+  subtitle?: string
+  children: ReactNode
+}
+
+export function Modal({ open, onClose, title, subtitle, children }: ModalProps) {
+  useEffect(() => {
+    if (!open) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    document.body.style.overflow = 'hidden'
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = ''
+    }
+  }, [open, onClose])
+
+  if (!open) return null
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <button
+        type="button"
+        aria-label="Tutup"
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title"
+        className="relative z-10 w-full max-w-2xl rounded-xl border border-surface-700 bg-surface-850 shadow-2xl"
+      >
+        <div className="flex items-start justify-between gap-4 border-b border-surface-700 px-5 py-4">
+          <div>
+            <h3 id="modal-title" className="text-sm font-semibold text-white">
+              {title}
+            </h3>
+            {subtitle && <p className="mt-0.5 text-xs text-surface-500">{subtitle}</p>}
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg p-1.5 text-surface-400 hover:bg-surface-800 hover:text-white"
+            aria-label="Tutup dialog"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="p-5">{children}</div>
+      </div>
+    </div>
   )
 }
